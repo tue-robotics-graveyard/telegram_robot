@@ -20,7 +20,7 @@ import logging
 import rospy
 
 import actionlib
-from conversation_engine.msg import ConverseAction, ConverseActionGoal, ConverseActionFeedback, ConverseActionResult
+from conversation_engine.msg import ConverseAction, ConverseGoal, ConverseFeedback, ConverseResult
 
 class ConversationEngineBot(object):
 
@@ -48,29 +48,33 @@ class ConversationEngineBot(object):
         # Start the Bot
         self.updater.start_polling()
 
-        # Run the bot until the you presses Ctrl-C or the process receives SIGINT,
-        # SIGTERM or SIGABRT. This should be used most of the time, since
-        # start_polling() is non-blocking and will stop the bot gracefully.
-        self.updater.idle()
+    def stop(self):
+        self.updater.stop()
 
     # Define a few command handlers. These usually take the two arguments bot and
     # update. Error handlers also receive the raised TelegramError object in error.
     def _start(self, bot, update):
+        rospy.loginfo("Received {}".format(update.message.text))
         update.message.reply_text('Hi! Your typed wish is my command')
 
     def _help(self, bot, update):
+        rospy.loginfo("Received {}".format(update.message.text))
         update.message.reply_text('With what? Please type a command in "natural" language')
 
     def _accept_command(self, bot, update):
-        rospy.loginfo("Received text: " + str(update))
-        update.message.reply_text(update.message.text)
+        rospy.loginfo("Received {}".format(update.message.text))
 
-        goal = ConverseActionGoal(command=update.message.text)
+        # update.message.reply_text(update.message.text)
+
+        goal = ConverseGoal(command=update.message.text)
+        rospy.loginfo(goal)
 
         self.ac.send_goal(goal)
+        self.ac.wait_for_result()
+        self.ac.get_result()
 
     def _error(self, bot, update, error):
-        rospy.error('Update "%s" caused error "%s"' % (update, error))
+        rospy.logerr('Update "%s" caused error "%s"' % (update, error))
 
 
 if __name__ == '__main__':
@@ -86,4 +90,6 @@ if __name__ == '__main__':
 
     engine.run()
 
+    rospy.spin()  # Use the rospy mainloop
 
+    engine.stop()
