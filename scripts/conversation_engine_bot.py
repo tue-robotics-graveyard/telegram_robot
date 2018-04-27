@@ -71,7 +71,11 @@ class ConversationEngineBot(object):
 
         self.ac.send_goal(goal)
         self.ac.wait_for_result()
-        self.ac.get_result()
+        result = self.ac.get_result()
+
+        rospy.loginfo(result)
+
+        update.message.reply_text(result.result_sentence)
 
     def _error(self, bot, update, error):
         rospy.logerr('Update "%s" caused error "%s"' % (update, error))
