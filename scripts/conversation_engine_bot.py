@@ -144,6 +144,9 @@ class ConversationEngineBot(AbstractHMIServer):
     def _accept_command(self, bot, update):
         rospy.loginfo("_accept_command received {}".format(update.message.text))
 
+        if not self._bot or not self._chat_id:
+            update.message.reply_text('Begin a conversation with /start')
+
         # update.message.reply_text(update.message.text)
 
         if self._answer_needed:
