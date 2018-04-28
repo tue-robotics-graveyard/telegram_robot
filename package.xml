@@ -16,8 +16,10 @@
 
   <build_depend>hmi</build_depend>
   <build_depend>python-telegram-bot</build_depend>
+  <build_depend>conversation_engine</build_depend>
 
   <run_depend>hmi</run_depend>
   <run_depend>python-telegram-bot</run_depend>
+  <run_depend>conversation_engine</run_depend>
 
 </package>
