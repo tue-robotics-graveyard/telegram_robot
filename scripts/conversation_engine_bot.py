@@ -20,6 +20,8 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
 import rospy
 
+import time
+
 import actionlib
 from conversation_engine.msg import ConverseAction, ConverseGoal, ConverseFeedback, ConverseResult
 
@@ -35,12 +37,12 @@ class ConversationEngineBot(AbstractHMIServer):
 
         self.robot_name = robot_name
 
-        self.ac = actionlib.SimpleActionClient("/conversation_engine", ConverseAction)
-        self.ac.wait_for_server()
+        self.ac = actionlib.SimpleActionClient("conversation_engine", ConverseAction)
 
         self._bot = None
         self._chat_id = None
         self._wait_for_answer = Event()
+        self._answer = None
 
         # Create the EventHandler and pass it your bot's token.
         self.updater = Updater(token)
@@ -61,26 +63,28 @@ class ConversationEngineBot(AbstractHMIServer):
 
     # Part of AbstractHmiServer
     def _determine_answer(self, description, grammar, target, is_preempt_requested):
+        rospy.loginfo("_determine_answer: Need to determine answer to {}".format(description))
         # Pose the question to the user via the chat
         self._bot.send_message(chat_id=self._chat_id,
                                text=description+" (Prefix your answer with /answer")
 
-        self._wait_for_answer.wait()
+        rospy.loginfo("Passed question to user")
+        # self._wait_for_answer.wait()
 
-        if rospy.is_shutdown() or is_preempt_requested():
-            return None
+        while not self._answer:
+            time.sleep(0.1)
 
-        rospy.loginfo("Received string: '%s'", self._string)
+        rospy.loginfo("Received string: '%s'", self._answer)
 
-        stripped = str(self._string.replace("/answer ", ""))
+        stripped = str(self._answer.replace("/answer ", ""))
 
         semantics = parse_sentence(stripped, grammar, target, debug=True)
 
         rospy.loginfo("Parsed semantics: %s", semantics)
 
         result = HMIResult(stripped, semantics)
-        self._string = None
-        self._wait_for_answer.clear()
+        self._answer = None
+        # self._wait_for_answer.clear()
 
         return result
 
@@ -94,12 +98,15 @@ class ConversationEngineBot(AbstractHMIServer):
     # Define a few command handlers. These usually take the two arguments bot and
     # update. Error handlers also receive the raised TelegramError object in error.
     def _start(self, bot, update):
-        rospy.loginfo("Received {}".format(update.message.text))
+        rospy.loginfo("Start received {}".format(update.message.text))
         update.message.reply_text('Hi! Your typed wish is my command')
 
         assert isinstance(bot, Bot)
         self._bot = bot
         self._chat_id = update.message.chat_id
+        rospy.loginfo("Started chat_id {}".format(self._chat_id))
+
+        self.ac.wait_for_server()
 
         self._bot.send_message(chat_id=update.message.chat_id,
                                text="I'm {}, please talk to me!".format(self.robot_name))
@@ -109,7 +116,7 @@ class ConversationEngineBot(AbstractHMIServer):
         update.message.reply_text('With what? Please type a command in "natural" language')
 
     def _accept_command(self, bot, update):
-        rospy.loginfo("Received {}".format(update.message.text))
+        rospy.loginfo("_accept_command received {}".format(update.message.text))
 
         # update.message.reply_text(update.message.text)
 
@@ -125,8 +132,9 @@ class ConversationEngineBot(AbstractHMIServer):
         update.message.reply_text(result.result_sentence)
 
     def _answer_question(self, bot, update):
-        self._string = update.message.text
-        self._wait_for_answer.set()
+        rospy.loginfo("_answer_question received {}".format(update.message.text))
+        self._answer = update.message.text
+        # self._wait_for_answer.set()
 
     def _error(self, bot, update, error):
         rospy.logerr('Update "%s" caused error "%s"' % (update, error))
