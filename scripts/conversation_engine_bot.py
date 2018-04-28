@@ -63,6 +63,12 @@ class ConversationEngineBot(AbstractHMIServer):
         # log all errors
         self.dp.add_error_handler(self._error)
 
+    def sanitize_text(self, txt):
+        stripped = "".join(c for c in txt if c not in """!.,:'?`~@#$%^&*()_+=-></*-+""")
+        lowered = stripped.lower()
+
+        return lowered
+
     # Part of AbstractHmiServer
     def _determine_answer(self, description, grammar, target, is_preempt_requested):
         rospy.loginfo("_determine_answer: Need to determine answer to '{}'".format(description))
@@ -88,15 +94,13 @@ class ConversationEngineBot(AbstractHMIServer):
 
         rospy.loginfo("Received answer: '%s'", self._answer)
 
-        stripped = str(self._answer.replace("/answer ", ""))
-        # stripped = "".join(c for c in stripped if c not in ('!','.',':', ',', "'"))
-        stripped = stripped.lower()
+        sanitized = self.sanitize_text(self._answer.replace("/answer ", ""))
 
-        semantics = parse_sentence(stripped, grammar, target)
+        semantics = parse_sentence(sanitized, grammar, target)
 
         rospy.loginfo("Parsed semantics: %s", semantics)
 
-        result = HMIResult(stripped, semantics)
+        result = HMIResult(sanitized, semantics)
         self._answer = None
         self._answer_needed = False
         # self._wait_for_answer.clear()
@@ -154,7 +158,7 @@ class ConversationEngineBot(AbstractHMIServer):
             self._answer = update.message.text
         else:
             rospy.loginfo("Command '{}' is a new command".format(update.message.text))
-            goal = ConverseGoal(command=update.message.text.lower())
+            goal = ConverseGoal(command=self.sanitize_text(update.message.text))
             rospy.loginfo(goal)
 
             self.ac.send_goal(goal, done_cb=self._done_callback, feedback_cb=self._feedback_callback)
