@@ -42,7 +42,7 @@ class ConversationEngineBot(AbstractHMIServer):
         self._bot = None
         self._chat_id = None
         self._wait_for_answer = Event()
-        self._answer = None
+        self._answer = None # "/answer bed"
 
         # Create the EventHandler and pass it your bot's token.
         self.updater = Updater(token)
@@ -72,13 +72,14 @@ class ConversationEngineBot(AbstractHMIServer):
         # self._wait_for_answer.wait()
 
         while not self._answer:
-            time.sleep(0.1)
+            rospy.loginfo("Wait for answer...")
+            time.sleep(1)
 
-        rospy.loginfo("Received string: '%s'", self._answer)
+        rospy.loginfo("Received answer: '%s'", self._answer)
 
         stripped = str(self._answer.replace("/answer ", ""))
 
-        semantics = parse_sentence(stripped, grammar, target, debug=True)
+        semantics = parse_sentence(stripped, grammar, target)
 
         rospy.loginfo("Parsed semantics: %s", semantics)
 
@@ -124,12 +125,12 @@ class ConversationEngineBot(AbstractHMIServer):
         rospy.loginfo(goal)
 
         self.ac.send_goal(goal)
-        self.ac.wait_for_result()
-        result = self.ac.get_result()
-
-        rospy.loginfo(result)
-
-        update.message.reply_text(result.result_sentence)
+        # self.ac.wait_for_result()
+        # result = self.ac.get_result()
+        #
+        # rospy.loginfo(result)
+        #
+        # update.message.reply_text(result.result_sentence)
 
     def _answer_question(self, bot, update):
         rospy.loginfo("_answer_question received {}".format(update.message.text))
