@@ -67,6 +67,20 @@ class ConversationEngineBot(AbstractHMIServer):
         stripped = "".join(c for c in txt if c not in """!.,:'?`~@#$%^&*()+=-></*-+""")
         lowered = stripped.lower()
 
+        mapping = { "dining table": "dining_table",
+                    "display case": "display_case",
+                    "storage shelf": "storage_shelf",
+                    "couch table": "couch_table",
+                    "tv table": "tv_table",
+                    "kitchen table": "kitchen_table",
+                    "kitchen cabinet": "kitchen_cabinet",
+                    "side table": "side_table",
+                    "living room": "living_room",
+                    "dining room": "dining_room"}
+
+        for key, value in mapping:
+            lowered = lowered.replace(key, value)
+
         return lowered
 
     # Part of AbstractHmiServer
@@ -158,7 +172,9 @@ class ConversationEngineBot(AbstractHMIServer):
             self._answer = update.message.text
         else:
             rospy.loginfo("Command '{}' is a new command".format(update.message.text))
-            goal = ConverseGoal(command=self.sanitize_text(update.message.text))
+            sanitized = self.sanitize_text(update.message.text)
+            rospy.loginfo("Sanitized command to '{}'".format(sanitized))
+            goal = ConverseGoal(command=sanitized)
             rospy.loginfo(goal)
 
             self.ac.send_goal(goal, done_cb=self._done_callback, feedback_cb=self._feedback_callback)
@@ -191,7 +207,7 @@ class ConversationEngineBot(AbstractHMIServer):
 
 if __name__ == '__main__':
     rospy.init_node('telegram_example')
-    token = rospy.get_param('/telegram/token', None)
+    token = rospy.get_param('telegram/token', None)
     robot_name = rospy.get_param('/robot/name', "amigo")
 
     if token is None:
