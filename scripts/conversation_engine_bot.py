@@ -118,6 +118,10 @@ class ConversationEngineBot(AbstractHMIServer):
         self._chat_id = update.message.chat_id
         rospy.loginfo("Started chat_id {}".format(self._chat_id))
 
+        self._answer = None
+        self._answer_needed = False
+        self.ac.cancel_all_goals()
+
         self.ac.wait_for_server()
 
         self._bot.send_message(chat_id=update.message.chat_id,
