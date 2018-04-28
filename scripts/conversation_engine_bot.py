@@ -68,10 +68,10 @@ class ConversationEngineBot(AbstractHMIServer):
 
         if not description:
             #Cannot handle empty questions
-            err = "Cannot answer empty question. grammar={g}, target={t}".format(g=grammar, t=target)
+            err = "Cannot answer empty question. grammar='{g}...', target='{t}'".format(g=grammar[:10], t=target)
             # raise Exception(err)  # TODO: Client cannot yet handle this
             rospy.logerr(err)
-            return HMIResult("", {})
+            return HMIResult(err, {})
 
         self._answer_needed = True
         # Pose the question to the user via the chat
@@ -141,6 +141,7 @@ class ConversationEngineBot(AbstractHMIServer):
             rospy.loginfo(goal)
 
             self.ac.send_goal(goal)
+
             # self.ac.wait_for_result()
             # result = self.ac.get_result()
             #
