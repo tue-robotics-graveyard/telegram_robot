@@ -72,11 +72,13 @@ class ConversationEngineBot(AbstractHMIServer):
 
         rospy.loginfo("Received string: '%s'", self._string)
 
-        semantics = {} #parse_sentence(self._string, grammar, target)
+        stripped = str(self._string.replace("/answer ", ""))
+
+        semantics = parse_sentence(stripped, grammar, target, debug=True)
 
         rospy.loginfo("Parsed semantics: %s", semantics)
 
-        result = HMIResult(self._string, semantics)
+        result = HMIResult(stripped, semantics)
         self._string = None
         self._wait_for_answer.clear()
 
