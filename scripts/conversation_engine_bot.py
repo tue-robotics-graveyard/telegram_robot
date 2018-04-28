@@ -55,6 +55,7 @@ class ConversationEngineBot(AbstractHMIServer):
         # on different commands - answer in Telegram
         self.dp.add_handler(CommandHandler("start", self._start))
         self.dp.add_handler(CommandHandler("help", self._help))
+        self.dp.add_handler(CommandHandler("stop", self._stop))
 
         # on noncommand i.e message - echo the message on Telegram
         self.dp.add_handler(MessageHandler(Filters.text, self._accept_command))
@@ -107,6 +108,13 @@ class ConversationEngineBot(AbstractHMIServer):
     def stop(self):
         self.updater.stop()
 
+    def _stop(self, bot, update):
+        rospy.loginfo("Stop received {}".format(update.message.text))
+
+        self._answer = None
+        self._answer_needed = False
+        self.ac.cancel_all_goals()
+
     # Define a few command handlers. These usually take the two arguments bot and
     # update. Error handlers also receive the raised TelegramError object in error.
     def _start(self, bot, update):
@@ -118,11 +126,11 @@ class ConversationEngineBot(AbstractHMIServer):
         self._chat_id = update.message.chat_id
         rospy.loginfo("Started chat_id {}".format(self._chat_id))
 
+        self.ac.wait_for_server()
+
         self._answer = None
         self._answer_needed = False
         self.ac.cancel_all_goals()
-
-        self.ac.wait_for_server()
 
         self._bot.send_message(chat_id=update.message.chat_id,
                                text="I'm {}, please talk to me!".format(self.robot_name))
