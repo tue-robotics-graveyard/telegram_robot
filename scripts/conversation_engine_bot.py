@@ -72,7 +72,7 @@ class ConversationEngineBot(AbstractHMIServer):
         # self._wait_for_answer.wait()
 
         while not self._answer:
-            rospy.loginfo("Wait for answer...")
+            rospy.logdebug("Wait for answer...")
             time.sleep(1)
 
         rospy.loginfo("Received answer: '%s'", self._answer)
