@@ -64,7 +64,7 @@ class ConversationEngineBot(AbstractHMIServer):
         self.dp.add_error_handler(self._error)
 
     def sanitize_text(self, txt):
-        stripped = "".join(c for c in txt if c not in """!.,:'?`~@#$%^&*()_+=-></*-+""")
+        stripped = "".join(c for c in txt if c not in """!.,:'?`~@#$%^&*()+=-></*-+""")
         lowered = stripped.lower()
 
         return lowered
