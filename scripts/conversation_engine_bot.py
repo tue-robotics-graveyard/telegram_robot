@@ -157,7 +157,7 @@ class ConversationEngineBot(AbstractHMIServer):
             goal = ConverseGoal(command=update.message.text)
             rospy.loginfo(goal)
 
-            self.ac.send_goal(goal)
+            self.ac.send_goal(goal, done_cb=self._done_callback, feedback_cb=self._feedback_callback)
 
             # self.ac.wait_for_result()
             # result = self.ac.get_result()
@@ -165,6 +165,21 @@ class ConversationEngineBot(AbstractHMIServer):
             # rospy.loginfo(result)
             #
             # update.message.reply_text(result.result_sentence)
+
+    def _done_callback(self, goal_status, result):
+        rospy.loginfo("Goal done: {gs}, {r}".format(gs=goal_status, r=result))
+
+        self._answer = None
+        self._answer_needed = False
+
+        self._bot.send_message(chat_id=self._chat_id,
+                               text=result.result_sentence)
+
+    def _feedback_callback(self, goal_status, feedback):
+        rospy.loginfo("Goal done: {gs}, {f}".format(gs=goal_status, f=feedback))
+
+        self._bot.send_message(chat_id=self._chat_id,
+                               text="I'm busy...")
 
     def _error(self, bot, update, error):
         rospy.logerr('Update "%s" caused error "%s"' % (update, error))
