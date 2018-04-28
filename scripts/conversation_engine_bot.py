@@ -89,6 +89,8 @@ class ConversationEngineBot(AbstractHMIServer):
         rospy.loginfo("Received answer: '%s'", self._answer)
 
         stripped = str(self._answer.replace("/answer ", ""))
+        stripped = " ".join(c for c in stripped if c not in ('!','.',':'))
+        stripped = stripped.lower()
 
         semantics = parse_sentence(stripped, grammar, target)
 
