@@ -44,6 +44,8 @@ class ConversationEngineBot(AbstractHMIServer):
         self._wait_for_answer = Event()
         self._answer = None # "/answer bed"
 
+        self._answer_needed = False
+
         # Create the EventHandler and pass it your bot's token.
         self.updater = Updater(token)
 
@@ -53,7 +55,6 @@ class ConversationEngineBot(AbstractHMIServer):
         # on different commands - answer in Telegram
         self.dp.add_handler(CommandHandler("start", self._start))
         self.dp.add_handler(CommandHandler("help", self._help))
-        self.dp.add_handler(CommandHandler("answer", self._answer_question))
 
         # on noncommand i.e message - echo the message on Telegram
         self.dp.add_handler(MessageHandler(Filters.text, self._accept_command))
@@ -64,16 +65,18 @@ class ConversationEngineBot(AbstractHMIServer):
     # Part of AbstractHmiServer
     def _determine_answer(self, description, grammar, target, is_preempt_requested):
         rospy.loginfo("_determine_answer: Need to determine answer to {}".format(description))
+
+        self._answer_needed = True
         # Pose the question to the user via the chat
         self._bot.send_message(chat_id=self._chat_id,
-                               text=description+" (Prefix your answer with /answer")
+                               text=description)
 
         rospy.loginfo("Passed question to user")
         # self._wait_for_answer.wait()
 
         while not self._answer:
             rospy.logdebug("Wait for answer...")
-            time.sleep(1)
+            time.sleep(0.5)
 
         rospy.loginfo("Received answer: '%s'", self._answer)
 
@@ -85,6 +88,7 @@ class ConversationEngineBot(AbstractHMIServer):
 
         result = HMIResult(stripped, semantics)
         self._answer = None
+        self._answer_needed = False
         # self._wait_for_answer.clear()
 
         return result
@@ -121,21 +125,21 @@ class ConversationEngineBot(AbstractHMIServer):
 
         # update.message.reply_text(update.message.text)
 
-        goal = ConverseGoal(command=update.message.text)
-        rospy.loginfo(goal)
+        if self._answer_needed:
+            rospy.loginfo("Command '{}' is answer to a question".format(update.message.text))
+            self._answer = update.message.text
+        else:
+            rospy.loginfo("Command '{}' is a new command".format(update.message.text))
+            goal = ConverseGoal(command=update.message.text)
+            rospy.loginfo(goal)
 
-        self.ac.send_goal(goal)
-        # self.ac.wait_for_result()
-        # result = self.ac.get_result()
-        #
-        # rospy.loginfo(result)
-        #
-        # update.message.reply_text(result.result_sentence)
-
-    def _answer_question(self, bot, update):
-        rospy.loginfo("_answer_question received {}".format(update.message.text))
-        self._answer = update.message.text
-        # self._wait_for_answer.set()
+            self.ac.send_goal(goal)
+            # self.ac.wait_for_result()
+            # result = self.ac.get_result()
+            #
+            # rospy.loginfo(result)
+            #
+            # update.message.reply_text(result.result_sentence)
 
     def _error(self, bot, update, error):
         rospy.logerr('Update "%s" caused error "%s"' % (update, error))
