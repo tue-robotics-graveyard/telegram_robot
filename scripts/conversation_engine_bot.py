@@ -64,7 +64,14 @@ class ConversationEngineBot(AbstractHMIServer):
 
     # Part of AbstractHmiServer
     def _determine_answer(self, description, grammar, target, is_preempt_requested):
-        rospy.loginfo("_determine_answer: Need to determine answer to {}".format(description))
+        rospy.loginfo("_determine_answer: Need to determine answer to '{}'".format(description))
+
+        if not description:
+            #Cannot handle empty questions
+            err = "Cannot answer empty question. grammar={g}, target={t}".format(g=grammar, t=target)
+            # raise Exception(err)  # TODO: Client cannot yet handle this
+            rospy.logerr(err)
+            return HMIResult("", {})
 
         self._answer_needed = True
         # Pose the question to the user via the chat
