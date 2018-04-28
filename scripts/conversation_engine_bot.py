@@ -89,7 +89,7 @@ class ConversationEngineBot(AbstractHMIServer):
         rospy.loginfo("Received answer: '%s'", self._answer)
 
         stripped = str(self._answer.replace("/answer ", ""))
-        # stripped = "".join(c for c in stripped if c not in ('!','.',':'))
+        # stripped = "".join(c for c in stripped if c not in ('!','.',':', ',', "'"))
         stripped = stripped.lower()
 
         semantics = parse_sentence(stripped, grammar, target)
@@ -154,7 +154,7 @@ class ConversationEngineBot(AbstractHMIServer):
             self._answer = update.message.text
         else:
             rospy.loginfo("Command '{}' is a new command".format(update.message.text))
-            goal = ConverseGoal(command=update.message.text)
+            goal = ConverseGoal(command=update.message.text.lower())
             rospy.loginfo(goal)
 
             self.ac.send_goal(goal, done_cb=self._done_callback, feedback_cb=self._feedback_callback)
